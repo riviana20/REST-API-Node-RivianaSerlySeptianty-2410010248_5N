@@ -148,8 +148,3 @@ Setiap data sensor disimpan ke file SQLite (`sensor.db`), dan `/api/history` mem
 <img width="1600" height="900" alt="19-api-history-sqlite" src="https://github.com/user-attachments/assets/f4b1a45b-eb51-4f21-b96b-4b60c0579456" />
 
 ---
-
-## Catatan
-
-- `sensor.db` berisi data sensor acak hasil simulasi.
-- Dashboard harus dibuka lewat `http://localhost:1880/dashboard.html` (bukan `file:///`) agar tidak terkena pembatasan CORS.
