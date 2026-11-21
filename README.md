@@ -81,19 +81,19 @@ simulasi_esp32.py --MQTT--> Node-RED --REST API / WebSocket--> dashboard.html
 | 5 | Web ke REST ke MQTT | Klik tombol lampu, perintah diterima MQTT subscriber |
 
 ### 1. Simulator ke MQTT
-![Simulator](screenshot/01-simulator.png)
+<img width="1600" height="900" alt="01-simulator" src="https://github.com/user-attachments/assets/fed54ef6-e8c0-4352-949e-d19fc5772f37" />
 
 ### 2. MQTT ke Node-RED
-![Debug Node-RED](screenshot/02-debug-nodered.png)
+<img width="1920" height="1080" alt="02-debug-nodered" src="https://github.com/user-attachments/assets/d796011b-fcfd-4230-8f12-4a0a05c70173" />
 
 ### 3. Node-RED ke REST
-![API suhu](screenshot/03-api-suhu.png)
+<img width="1600" height="900" alt="03-api-suhu" src="https://github.com/user-attachments/assets/2bcb6073-3106-4ad2-a88f-066208b0a0de" />
 
 ### 4. REST ke Web
-![Dashboard](screenshot/04-dashboard.png)
+<img width="1600" height="900" alt="WhatsApp Image 2026-11-19 at 21 53 57" src="https://github.com/user-attachments/assets/6492bd10-bdf5-4036-9d29-badfada82826" />
 
 ### 5. Web ke REST ke MQTT
-![Kontrol lampu](screenshot/05-kontrol-lampu.png)
+<img width="1600" height="900" alt="05-mqtt-subscriber" src="https://github.com/user-attachments/assets/7e02f56a-7ac5-48d4-893d-d54e43ded839" />
 
 ---
 
@@ -108,15 +108,17 @@ Contoh pengujian:
 curl.exe -X PUT http://127.0.0.1:1880/api/threshold -H "Content-Type: application/json" -H "X-API-Key: rahasia123" -d "{\"max_suhu\":27}"
 ```
 
-![Flow threshold](screenshot/06-flow-threshold.png)
-![Hasil PUT threshold](screenshot/07-put-threshold.png)
-![Notifikasi suhu](screenshot/08-notifikasi-suhu.png)
+<img width="1600" height="900" alt="WhatsApp Image 2026-11-20 at 10 49 50" src="https://github.com/user-attachments/assets/9f82b36f-acc8-4a14-87e0-a20210f0372f" />
+
+<img width="1600" height="900" alt="WhatsApp Image 2026-11-20 at 11 03 02" src="https://github.com/user-attachments/assets/fb51832b-d534-4876-b27a-f25d051e9987" />
+
+<img width="1600" height="900" alt="WhatsApp Image 2026-11-20 at 11 03 06" src="https://github.com/user-attachments/assets/bcd5cafa-8ce2-424c-b16e-f2807552dfdd" />
 
 ## 2. Grafik Real-time dengan Chart.js
 
 Dashboard menampilkan grafik garis suhu dan kelembaban untuk 20 data terakhir, diperbarui otomatis setiap ada data baru.
 
-![Grafik real-time](screenshot/09-grafik.png)
+<img width="1600" height="900" alt="WhatsApp Image 2026-11-20 at 12 28 04" src="https://github.com/user-attachments/assets/d654b491-c662-494d-a217-a44ae779aa95" />
 
 ## 3. Autentikasi API Key (`X-API-Key`)
 
@@ -127,22 +129,23 @@ Catatan: key `rahasia123` hanya contoh untuk latihan.
 ```
 curl.exe -i -X POST http://localhost:1880/api/kontrol -H "Content-Type: application/json" -d "{\"device\":\"lamp\",\"action\":\"on\"}"
 ```
-![Tanpa API key (401)](screenshot/10-tanpa-key-401.png)
-![Dengan API key (200)](screenshot/11-dengan-key-200.png)
+<img width="1600" height="900" alt="WhatsApp Image 2026-11-20 at 12 25 20" src="https://github.com/user-attachments/assets/ba672549-c8d7-4184-a83b-d9fda403cb37" />
 
 ## 4. WebSocket (Update Tanpa Polling)
 
 Node-RED mengirim data sensor ke dashboard lewat WebSocket di path `/ws/sensor`, sehingga dashboard tidak lagi melakukan polling ke `/api/suhu` dan `/api/history` secara berulang.
 
-![WebSocket Messages](screenshot/12-websocket-messages.png)
-![Tidak ada polling](screenshot/13-tanpa-polling.png)
+<img width="1600" height="900" alt="14-websocket-messages" src="https://github.com/user-attachments/assets/89157d34-507e-4fe9-bb03-7115f70cae03" />
+
+<img width="1920" height="1080" alt="15-tanpa-polling" src="https://github.com/user-attachments/assets/08a17f5b-77c7-4963-945e-5f7f45eb9e91" />
 
 ## 5. History Disimpan ke Database SQLite
 
 Setiap data sensor disimpan ke file SQLite (`sensor.db`), dan `/api/history` membaca data dari database tersebut. Dengan begitu history tidak hilang saat Node-RED di-restart.
 
-![Flow SQLite](screenshot/14-flow-sqlite.png)
-![History setelah restart](screenshot/15-history-setelah-restart.png)
+<img width="1600" height="900" alt="16-flow-sqlite" src="https://github.com/user-attachments/assets/48ba866e-903e-4de7-8df3-21cad409ef76" />
+
+<img width="1600" height="900" alt="19-api-history-sqlite" src="https://github.com/user-attachments/assets/f4b1a45b-eb51-4f21-b96b-4b60c0579456" />
 
 ---
 
