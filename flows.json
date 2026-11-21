@@ -1,0 +1,395 @@
+[
+    {
+        "id": "644bc814dd55e450",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "mqtt_broker_config",
+        "type": "mqtt-broker",
+        "name": "Local Mosquitto",
+        "broker": "localhost",
+        "port": "1883",
+        "clientid": "node-red-backend",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": 15,
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "365accb8910f97a9",
+        "type": "websocket-listener",
+        "path": "/ws/sensor",
+        "wholemsg": "false"
+    },
+    {
+        "id": "mqtt_sensor_in",
+        "type": "mqtt in",
+        "z": "644bc814dd55e450",
+        "name": "Subscribe Sensor",
+        "topic": "iot/sensor",
+        "qos": "0",
+        "datatype": "json",
+        "broker": "mqtt_broker_config",
+        "nl": false,
+        "rap": false,
+        "inputs": 0,
+        "x": 730,
+        "y": 140,
+        "wires": [
+            [
+                "store_sensor"
+            ]
+        ]
+    },
+    {
+        "id": "store_sensor",
+        "type": "function",
+        "z": "644bc814dd55e450",
+        "name": "Simpan Data Sensor",
+        "func": "// Simpan ke context global\nvar data = msg.payload;\ndata.received = new Date().toISOString();\nflow.set('lastSensor', data);\n\n// Simpan history (max 50 data)\nvar history = flow.get('history') || [];\nhistory.push(data);\nif (history.length > 50) history.shift();\nflow.set('history', history);\n\n// Cek batas suhu (threshold)\nvar maxSuhu = flow.get('maxSuhu');\nif (typeof maxSuhu === 'number' && !isNaN(maxSuhu) && data.suhu > maxSuhu) {\n    var alertMsg = {\n        status: 'alert',\n        message: 'Suhu ' + data.suhu + '°C melebihi batas ' + maxSuhu + '°C',\n        suhu: data.suhu,\n        max_suhu: maxSuhu,\n        timestamp: data.received\n    };\n    flow.set('lastAlert', alertMsg);\n    node.warn('NOTIFIKASI SUHU: ' + alertMsg.message);\n}\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 960,
+        "y": 140,
+        "wires": [
+            [
+                "debug_sensor",
+                "41953ddb18c03719",
+                "234149e677e966f4"
+            ]
+        ]
+    },
+    {
+        "id": "debug_sensor",
+        "type": "debug",
+        "z": "644bc814dd55e450",
+        "name": "Log Sensor",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1190,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "http_get_suhu",
+        "type": "http in",
+        "z": "644bc814dd55e450",
+        "name": "GET /api/suhu",
+        "url": "/api/suhu",
+        "method": "get",
+        "upload": false,
+        "skipBodyParsing": false,
+        "swaggerDoc": "",
+        "x": 710,
+        "y": 260,
+        "wires": [
+            [
+                "resp_suhu"
+            ]
+        ]
+    },
+    {
+        "id": "resp_suhu",
+        "type": "function",
+        "z": "644bc814dd55e450",
+        "name": "Build Response Suhu",
+        "func": "const data = flow.get('lastSensor') || { suhu: null, kelembaban: null };\n\nmsg.payload = {\n    status: 'success',\n    data: data,\n    server_time: new Date().toISOString()\n};\n\nmsg.headers = { 'Access-Control-Allow-Origin': '*' };\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 960,
+        "y": 260,
+        "wires": [
+            [
+                "http_resp_suhu"
+            ]
+        ]
+    },
+    {
+        "id": "http_resp_suhu",
+        "type": "http response",
+        "z": "644bc814dd55e450",
+        "name": "",
+        "statusCode": "200",
+        "headers": {},
+        "x": 1180,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "http_get_history",
+        "type": "http in",
+        "z": "644bc814dd55e450",
+        "name": "GET /api/history",
+        "url": "/api/history",
+        "method": "get",
+        "upload": false,
+        "skipBodyParsing": false,
+        "swaggerDoc": "",
+        "x": 720,
+        "y": 320,
+        "wires": [
+            [
+                "resp_history"
+            ]
+        ]
+    },
+    {
+        "id": "resp_history",
+        "type": "function",
+        "z": "644bc814dd55e450",
+        "name": "Build Response History",
+        "func": "const { DatabaseSync } = global.get('sqlite');\nconst db = new DatabaseSync('C:/Users/WelcompTC/.node-red/sensor.db');\n\ndb.exec(`CREATE TABLE IF NOT EXISTS history (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    suhu REAL,\n    kelembaban REAL,\n    timestamp TEXT,\n    received TEXT\n)`);\n\n// Ambil 50 data terakhir, lalu urutkan dari yang terlama\nconst rows = db.prepare('SELECT suhu, kelembaban, timestamp, received FROM history ORDER BY id DESC LIMIT 50').all();\ndb.close();\nconst history = rows.map(r => ({ ...r })).reverse();\n\nmsg.payload = {\n  status: 'success',\n  count: history.length,\n  data: history\n};\nmsg.headers = { 'Access-Control-Allow-Origin': '*' };\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 970,
+        "y": 320,
+        "wires": [
+            [
+                "http_resp_history"
+            ]
+        ]
+    },
+    {
+        "id": "http_resp_history",
+        "type": "http response",
+        "z": "644bc814dd55e450",
+        "name": "",
+        "statusCode": "200",
+        "headers": {},
+        "x": 1180,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "http_post_kontrol",
+        "type": "http in",
+        "z": "644bc814dd55e450",
+        "name": "POST /api/kontrol",
+        "url": "/api/kontrol",
+        "method": "post",
+        "upload": false,
+        "skipBodyParsing": false,
+        "swaggerDoc": "",
+        "x": 720,
+        "y": 400,
+        "wires": [
+            [
+                "proc_kontrol"
+            ]
+        ]
+    },
+    {
+        "id": "proc_kontrol",
+        "type": "function",
+        "z": "644bc814dd55e450",
+        "name": "Validasi & Publish",
+        "func": "// Cek API key\nif (msg.req.headers['x-api-key'] !== 'rahasia123') {\n    msg.statusCode = 401;\n    msg.headers = {'Access-Control-Allow-Origin': '*'};\n    msg.payload = {status: 'error', message: 'API key tidak valid'};\n    return [msg, null];\n}\n\nvar body = msg.payload;\nif (!body.device || !body.action) {\n    msg.statusCode = 400;\n    msg.payload = {status: 'error', message: 'device dan action wajib diisi'};\n    msg.headers = {'Access-Control-Allow-Origin': '*'};\n    return [msg, null];\n}\n\n// Publish ke MQTT\nvar mqttMsg = {payload: body, topic: 'iot/kontrol'};\nnode.send([null, mqttMsg]);\n\nmsg.statusCode = 200;\nmsg.payload = {\n    status: 'success',\n    message: 'Perintah terkirim',\n    sent: body\n};\nmsg.headers = {'Access-Control-Allow-Origin': '*'};\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 950,
+        "y": 400,
+        "wires": [
+            [
+                "http_resp_kontrol"
+            ],
+            [
+                "mqtt_publish_kontrol"
+            ]
+        ]
+    },
+    {
+        "id": "http_resp_kontrol",
+        "type": "http response",
+        "z": "644bc814dd55e450",
+        "name": "",
+        "x": 1170,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "mqtt_publish_kontrol",
+        "type": "mqtt out",
+        "z": "644bc814dd55e450",
+        "name": "Publish Kontrol",
+        "topic": "",
+        "qos": "0",
+        "retain": "false",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "mqtt_broker_config",
+        "x": 1200,
+        "y": 440,
+        "wires": []
+    },
+    {
+        "id": "http_cors",
+        "type": "http in",
+        "z": "644bc814dd55e450",
+        "name": "OPTIONS CORS",
+        "url": "/api/kontrol",
+        "method": "options",
+        "upload": false,
+        "skipBodyParsing": false,
+        "swaggerDoc": "",
+        "x": 720,
+        "y": 500,
+        "wires": [
+            [
+                "cors_resp"
+            ]
+        ]
+    },
+    {
+        "id": "cors_resp",
+        "type": "function",
+        "z": "644bc814dd55e450",
+        "name": "CORS Headers",
+        "func": "msg.statusCode = 204;\nmsg.payload = '';\nmsg.headers = {\n    'Access-Control-Allow-Origin': '*',\n    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',\n    'Access-Control-Allow-Headers': 'Content-Type'\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 940,
+        "y": 500,
+        "wires": [
+            [
+                "cors_http_resp"
+            ]
+        ]
+    },
+    {
+        "id": "cors_http_resp",
+        "type": "http response",
+        "z": "644bc814dd55e450",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 1170,
+        "y": 500,
+        "wires": []
+    },
+    {
+        "id": "096eb8861911388c",
+        "type": "http in",
+        "z": "644bc814dd55e450",
+        "name": "PUT /api/threshold",
+        "url": "/api/threshold",
+        "method": "put",
+        "upload": false,
+        "skipBodyParsing": false,
+        "swaggerDoc": "",
+        "x": 730,
+        "y": 580,
+        "wires": [
+            [
+                "75b4898042a0b187"
+            ]
+        ]
+    },
+    {
+        "id": "75b4898042a0b187",
+        "type": "function",
+        "z": "644bc814dd55e450",
+        "name": "Set Threshold",
+        "func": "// Cek API key\nif (msg.req.headers['x-api-key'] !== 'rahasia123') {\n    msg.statusCode = 401;\n    msg.headers = { 'Access-Control-Allow-Origin': '*' };\n    msg.payload = { status: 'error', message: 'API key tidak valid' };\n    return msg;\n}\n\nvar body = msg.payload;\nmsg.headers = { 'Access-Control-Allow-Origin': '*' };\n\nif (!body || typeof body.max_suhu !== 'number') {\n    msg.statusCode = 400;\n    msg.payload = { status: 'error', message: 'max_suhu wajib angka' };\n    return msg;\n}\n\nflow.set('maxSuhu', body.max_suhu);\n\nmsg.statusCode = 200;\nmsg.payload = {\n    status: 'success',\n    message: 'Threshold diperbarui',\n    max_suhu: body.max_suhu\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 940,
+        "y": 580,
+        "wires": [
+            [
+                "ecde0146c935e580"
+            ]
+        ]
+    },
+    {
+        "id": "ecde0146c935e580",
+        "type": "http response",
+        "z": "644bc814dd55e450",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 1170,
+        "y": 580,
+        "wires": []
+    },
+    {
+        "id": "41953ddb18c03719",
+        "type": "websocket out",
+        "z": "644bc814dd55e450",
+        "name": "WebSocket Sensor",
+        "server": "365accb8910f97a9",
+        "client": "",
+        "x": 1210,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "234149e677e966f4",
+        "type": "function",
+        "z": "644bc814dd55e450",
+        "name": "Simpan ke SQLite",
+        "func": "const { DatabaseSync } = global.get('sqlite');\nconst db = new DatabaseSync('C:/Users/WelcompTC/.node-red/sensor.db');\n\ndb.exec(`CREATE TABLE IF NOT EXISTS history (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    suhu REAL,\n    kelembaban REAL,\n    timestamp TEXT,\n    received TEXT\n)`);\n\nconst d = msg.payload;\ndb.prepare('INSERT INTO history (suhu, kelembaban, timestamp, received) VALUES (?, ?, ?, ?)')\n  .run(d.suhu, d.kelembaban, d.timestamp, d.received);\n\ndb.close();\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1210,
+        "y": 200,
+        "wires": [
+            []
+        ]
+    }
+]
